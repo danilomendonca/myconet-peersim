@@ -127,8 +127,6 @@ public class FaaSForce extends FunctionsCatalogHolder
     }
 
     private double getUpdatedUtility(Node node, String functionName, int pid){
-        //long actualAllocation = getValue().getShares().get(functionName); //TODO
-        //double demandAllocationRatio = idealAllocation > 0 ? actualAllocation / idealAllocation : 0;
         double baseUtility = getValue().getDemands().get(functionName);
         double neighborsContribution = getNeighborsContribution(node, functionName, pid);
         double newUtility = baseUtility - neighborsContribution;
