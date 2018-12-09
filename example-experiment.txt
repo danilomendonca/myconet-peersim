@@ -26,7 +26,7 @@ network.node.hyphalink_proto lnk
 network.node.fungalgrowth_proto fng
 control.shf Shuffle
 
-init.state fungus.StateInitializer
+init.state fungus.stateinitializer
 init.state.initial_state BIOMASS
 init.clean fungus.HyphaDataCleanerInitializer
 
