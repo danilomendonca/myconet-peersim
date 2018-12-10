@@ -1,5 +1,5 @@
 # network size
-SIZE 2
+SIZE 3
 
 # parameters of periodic execution
 CYCLES 100
@@ -22,10 +22,10 @@ simulation.logtime CYCLE
 
 protocol.link peersim.core.IdleProtocol
 
-protocol.avg peerfaas.protocol.FaaSForce
-protocol.avg.linkable link
-protocol.avg.step CYCLE
-protocol.avg.transport tr
+protocol.ff peerfaas.protocol.FaaSForce
+protocol.ff.linkable link
+protocol.ff.step CYCLE
+protocol.ff.transport tr
 
 protocol.urt UniformRandomTransport
 protocol.urt.mindelay (CYCLE*MINDELAY)/100
@@ -42,20 +42,23 @@ init.rndlink.k 20
 init.rndlink.protocol link
 
 #init.vals LinearDistribution
-#init.vals.protocol avg
+#init.vals.protocol ff
 #init.vals.max SIZE
 #init.vals.min 1
 
 init.sch CDScheduler
-init.sch.protocol avg
+init.sch.protocol ff
 init.sch.randstart
 
 init.fc peerfaas.control.FunctionsCatalogInitializer
-init.fc.protocol avg
+init.fc.protocol ff
 
 ################ control ==============================
 
 #control.0 SingleValueObserver
-#control.0.protocol avg
+#control.0.protocol ff
 #control.0.step CYCLE
 
+control.dv peerfaas.control.DemandVariation
+control.dv.protocol ff
+control.dv.step CYCLE * 10

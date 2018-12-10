@@ -65,6 +65,30 @@ public class FaaSForce extends FunctionsCatalogHolder
     private void sendUpdatedCatalog(Node node, int pid) {
         Linkable linkable =
                 (Linkable) node.getProtocol(FastConfig.getLinkable(pid));
+        for(int i = 0; i < linkable.degree(); i++){
+            Node peer = linkable.getNeighbor(i);
+            // XXX quick and dirty handling of failures
+            // (message would be lost anyway, we save time)
+            if (!peer.isUp()) return;
+
+            boolean updatedOurCatalog = checkOurCatalog(node, pid, getValue().getUtilities().keySet());
+            if(updatedOurCatalog) {
+                System.out.println("Sending updated catalog from Node " + node.getIndex() + " to Node " + peer.getIndex());
+                getValue().printCatalog();
+                ((Transport) node.getProtocol(FastConfig.getTransport(pid))).
+                        send(
+                                node,
+                                peer,
+                                new FunctionsCatalogMessage(getValue(), node),
+                                pid);
+            }
+        }
+    }
+
+
+    private void sendUpdatedCatalogToRandom(Node node, int pid) {
+        Linkable linkable =
+                (Linkable) node.getProtocol(FastConfig.getLinkable(pid));
         if (linkable.degree() > 0) {
             Node peern = linkable.getNeighbor(
                     CommonState.r.nextInt(linkable.degree()));
@@ -140,8 +164,8 @@ public class FaaSForce extends FunctionsCatalogHolder
         for(int i = 0; i < linkable.degree(); i++) {
             Node neighbor = linkable.getNeighbor(i);
             FaaSForce neighborForce = (FaaSForce) neighbor.getProtocol(pid);
-            double latency = 100; //TODO
-            double maxLatency = 400; //TODO
+            double latency = 10;//CommonState.r.nextDouble() * 100; //TODO
+            double maxLatency = 100; //TODO
             double latencyAttenuation = 1 / Math.exp(latency/maxLatency);
             long theirShare = neighborForce.getValue().getShares().getOrDefault(functionName, 0l);
             neighborsContribution += theirShare * latencyAttenuation;
