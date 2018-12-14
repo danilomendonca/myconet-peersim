@@ -16,7 +16,7 @@
  *
  */
 
-package peerfaas.common;
+package peerfaas.common.catalog;
 
 import java.util.Map;
 

@@ -18,7 +18,7 @@
 
 package peerfaas.control;
 
-import peerfaas.common.FunctionsCatalogFactory;
+import peerfaas.common.catalog.FunctionsCatalogFactory;
 import peerfaas.protocol.FunctionsCatalogHolder;
 import peersim.config.Configuration;
 import peersim.config.FastConfig;

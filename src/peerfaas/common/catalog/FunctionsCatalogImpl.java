@@ -1,5 +1,6 @@
-package peerfaas.common;
+package peerfaas.common.catalog;
 
+import peerfaas.common.AllocationSolver;
 import peersim.util.IncrementalStats;
 
 import java.util.*;
@@ -10,7 +11,7 @@ public class FunctionsCatalogImpl implements FunctionsCatalog{
     Map<String,IncrementalStats> demandStats;
     Map<String,Double> utilities;
     Map<String,Long> shares;
-    int capcity;
+    int capacity;
 
     public FunctionsCatalogImpl(){
         demands = new HashMap<>();
@@ -53,12 +54,12 @@ public class FunctionsCatalogImpl implements FunctionsCatalog{
 
     @Override
     public int getCapacity() {
-        return capcity;
+        return capacity;
     }
 
     @Override
     public void setCapacity(int capacity) {
-        this.capcity = capcity;
+        this.capacity = capacity;
     }
 
 
@@ -84,6 +85,7 @@ public class FunctionsCatalogImpl implements FunctionsCatalog{
 
     @Override
     public void normalizeUtilities(double maxUtility) {
+        maxUtility = Math.max(1, maxUtility);
         for (String fName : getUtilities().keySet()) {
             double newUtility = getUtilities().get(fName);
             double normalizedUtility = newUtility / (maxUtility);
@@ -93,7 +95,7 @@ public class FunctionsCatalogImpl implements FunctionsCatalog{
     }
 
     public void updateShares(int capcity){
-        long capacity = 10; //TODO
+        long capacity = capcity;
         long availableCapacity = capacity;
         for (String fName : getUtilities().keySet()) {
             double demand = getAverageDemand(fName);
@@ -106,7 +108,7 @@ public class FunctionsCatalogImpl implements FunctionsCatalog{
 
     public void printCatalog(){
         for(String fName : getUtilities().keySet())
-            System.out.println(fName + " utility: " + getUtilities().get(fName) + " share: " + getShares().get(fName));
+            System.out.println(fName + " demand: " + getDemands().get(fName) + " utility: " + getUtilities().get(fName) + " share: " + getShares().get(fName));
     }
 
     private <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {

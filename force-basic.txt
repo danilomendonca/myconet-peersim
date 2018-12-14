@@ -1,14 +1,14 @@
 # network size
-SIZE 2
+SIZE 12
 
 # connectivity
-CONNECTIVITY SIZE - 1
+CONNECTIVITY 2
 
 # number of distinct functions in the system
 ENTROPY 10
 
 # the capacity available to each node
-CAPACITY 10
+CAPACITY 6
 
 # parameters of periodic execution
 CYCLES 100
@@ -49,6 +49,7 @@ protocol.tr.drop DROP
 init.rndlink WireKOut
 init.rndlink.k CONNECTIVITY
 init.rndlink.protocol link
+init.rndlink.undir true
 
 #init.vals LinearDistribution
 #init.vals.protocol ff
@@ -73,3 +74,4 @@ init.fc.capacity CAPACITY
 control.dv peerfaas.control.DemandVariation
 control.dv.protocol ff
 control.dv.step CYCLE / 10
+control.dv.delta 0

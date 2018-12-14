@@ -1,11 +1,10 @@
-package peerfaas.common;
+package peerfaas.common.catalog;
 
-import peersim.core.CommonState;
+import peerfaas.common.random.RandomDemand;
 
 public class FunctionsCatalogFactory {
 
     static FunctionsCatalogFactory instance = null;
-
     public static FunctionsCatalogFactory getInstance(){
         if(instance != null)
             return instance;
@@ -16,24 +15,32 @@ public class FunctionsCatalogFactory {
 
     }
 
+    private final RandomDemand randomDemand = new RandomDemand();
+
     //TODO
     public FunctionsCatalog createCatalog(int capacity, int entropy){
         FunctionsCatalog fc = new FunctionsCatalogImpl();
         fc.setCapacity(capacity);
         double maxUtility = 0;
-        for(int i = 0; i < entropy; i++){//TODO
+        for(int i = 0; i < entropy; i++){
             String functionName = "function" + i;
-            double demand = CommonState.r.nextDouble() * 2; //TODO
-            fc.updateDemand(functionName, demand);
-            double utility = demand;
-            if(utility > maxUtility) {
-                maxUtility = utility;
-            }
-            fc.getUtilities().put(functionName, utility);
+            maxUtility = assignUtility(fc, functionName, 1);
         }
         fc.normalizeUtilities(maxUtility);
         fc.updateShares(capacity);
         fc.printCatalog();
         return fc;
+    }
+
+    private double assignUtility(FunctionsCatalog fc, String functionName, double baseDemand) {
+        double initialDemand = randomDemand.initialDemand(baseDemand);
+        double maxUtility = 0;
+        fc.updateDemand(functionName, initialDemand);
+        double utility = initialDemand;
+        if(utility > maxUtility) {
+            maxUtility = utility;
+        }
+        fc.getUtilities().put(functionName, utility);
+        return maxUtility;
     }
 }

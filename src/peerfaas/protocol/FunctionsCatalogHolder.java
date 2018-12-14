@@ -18,12 +18,9 @@
 
 package peerfaas.protocol;
 
-import peerfaas.common.FunctionsCatalog;
-import peerfaas.common.FunctionsCatalogImpl;
+import peerfaas.common.catalog.FunctionsCatalog;
+import peerfaas.common.catalog.FunctionsCatalogImpl;
 import peersim.core.Protocol;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * The task of this protocol is to store a single double value and make it

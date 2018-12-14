@@ -18,7 +18,7 @@
 
 package peerfaas.protocol;
 
-import peerfaas.common.FunctionsCatalog;
+import peerfaas.common.catalog.FunctionsCatalog;
 import peersim.cdsim.CDProtocol;
 import peersim.config.FastConfig;
 import peersim.core.CommonState;
@@ -164,10 +164,10 @@ public class FaaSForce extends FunctionsCatalogHolder
         double neighborsContribution = 0;
         for(int i = 0; i < linkable.degree(); i++) {
             Node neighbor = linkable.getNeighbor(i);
-            FaaSForce neighborForce = (FaaSForce) neighbor.getProtocol(pid);
             double latency = 10; //CommonState.r.nextDouble() * 100; //TODO
             double maxLatency = 100; //TODO
             double latencyAttenuation = 1 / Math.exp(latency/maxLatency);
+            FaaSForce neighborForce = (FaaSForce) neighbor.getProtocol(pid);
             long share = neighborForce.getValue().getShares().getOrDefault(functionName, 0l);
             neighborsContribution += (share) * latencyAttenuation;
         }

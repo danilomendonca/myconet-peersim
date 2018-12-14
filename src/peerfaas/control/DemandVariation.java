@@ -18,13 +18,12 @@
 
 package peerfaas.control;
 
+import peerfaas.common.random.RandomDemand;
 import peerfaas.protocol.FaaSForce;
 import peersim.config.Configuration;
-import peersim.core.CommonState;
 import peersim.core.Control;
 import peersim.core.Network;
 import peersim.util.IncrementalStats;
-import peersim.vector.SingleValue;
 
 /**
  * Print statistics for an average aggregation computation. Statistics printed
@@ -39,14 +38,11 @@ public class DemandVariation implements Control {
     // Constants
     // /////////////////////////////////////////////////////////////////////
 
-    /**
-     * Config parameter that determines the accuracy for standard deviation
-     * before stopping the simulation. If not defined, a negative value is used
-     * which makes sure the observer does not stop the simulation
+    /** TODO
      *
      * @config
      */
-    private static final String PAR_DELTA = "accuracy";
+    private static final String PAR_DELTA = "delta";
 
     /**
      * The protocol to operate on.
@@ -69,7 +65,7 @@ public class DemandVariation implements Control {
      * Accuracy for standard deviation used to stop the simulation; obtained
      * from config property {@link #PAR_DELTA}.
      */
-    private final double accuracy;
+    private final double delta;
 
     /** Protocol identifier; obtained from config property {@link #PAR_PROT}. */
     private final int pid;
@@ -83,8 +79,8 @@ public class DemandVariation implements Control {
      */
     public DemandVariation(String name) {
         this.name = name;
-        accuracy = Configuration.getDouble(name + "." + PAR_DELTA, -1);
         pid = Configuration.getPid(name + "." + PAR_PROT);
+        delta = Configuration.getDouble(name + "." + PAR_DELTA, -1);
     }
 
     // /////////////////////////////////////////////////////////////////////
@@ -107,10 +103,16 @@ public class DemandVariation implements Control {
                     .getProtocol(pid);
             for(String functionName : protocol.getValue().getDemands().keySet()) {
                 double actualDemand = protocol.getValue().getDemands().get(functionName);
-                double nextDemand = Math.max(0, actualDemand);// + (CommonState.r.nextDouble() - 0.5) * 2);
+                double nextDemand = getNextDemand(actualDemand);
                 protocol.getValue().updateDemand(functionName, nextDemand);
             }
         }
         return false;
     }
+
+    private double getNextDemand(double actualDemand) {
+        double variation = RandomDemand.getVariation(delta);
+        return Math.max(0, actualDemand + variation);
+    }
+
 }
