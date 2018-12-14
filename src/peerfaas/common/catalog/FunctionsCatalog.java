@@ -18,7 +18,10 @@
 
 package peerfaas.common.catalog;
 
+import peersim.core.Node;
+
 import java.util.Map;
+import java.util.AbstractMap;
 
 /**
 * The implementor class has a single parameter. This interface
@@ -30,9 +33,9 @@ public interface FunctionsCatalog {
 
     void setDemands(Map<String,Double> value);
 
-    void updateDemand(String functionName, Double value);
-
     Double getAverageDemand(String functionName);
+
+    void updateDemand(String functionName, Double value);
 
     void resetDemand(String functionName);
 
@@ -56,13 +59,15 @@ public interface FunctionsCatalog {
     */
     Map<String, Long> getShares();
 
-    void updateShares(int capacity);
-
     /**
     * Modifies the value of the parameter hold by the implementor
     * of this interface.
     */
     void setShares(Map<String, Long> value);
+
+    void updateShares(Node node, int capcity, int pid);
+
+    Map<String, AbstractMap.SimpleEntry<Long, Double>> getDelegatedDemand();
 
     int getCapacity();
 

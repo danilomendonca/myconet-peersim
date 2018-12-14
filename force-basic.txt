@@ -1,5 +1,5 @@
 # network size
-SIZE 12
+SIZE 3
 
 # connectivity
 CONNECTIVITY 2
@@ -8,7 +8,10 @@ CONNECTIVITY 2
 ENTROPY 10
 
 # the capacity available to each node
-CAPACITY 6
+CAPACITY 5
+
+# the maximum variation of demand at each cycle
+DELTADEMAND 1
 
 # parameters of periodic execution
 CYCLES 100
@@ -33,7 +36,7 @@ protocol.link peersim.core.IdleProtocol
 
 protocol.ff peerfaas.protocol.FaaSForce
 protocol.ff.linkable link
-protocol.ff.step CYCLE
+protocol.ff.step CYCLE / 10
 protocol.ff.transport tr
 
 protocol.urt UniformRandomTransport
@@ -56,14 +59,14 @@ init.rndlink.undir true
 #init.vals.max SIZE
 #init.vals.min 1
 
-init.sch CDScheduler
-init.sch.protocol ff
-init.sch.randstart
-
 init.fc peerfaas.control.FunctionsCatalogInitializer
 init.fc.protocol ff
 init.fc.entropy ENTROPY
 init.fc.capacity CAPACITY
+
+init.sch CDScheduler
+init.sch.protocol ff
+init.sch.randstart
 
 ################ control ==============================
 
@@ -74,4 +77,4 @@ init.fc.capacity CAPACITY
 control.dv peerfaas.control.DemandVariation
 control.dv.protocol ff
 control.dv.step CYCLE / 10
-control.dv.delta 0
+control.dv.delta DELTADEMAND

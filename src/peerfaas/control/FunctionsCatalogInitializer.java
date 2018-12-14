@@ -106,7 +106,7 @@ public class FunctionsCatalogInitializer implements Control {
             FunctionsCatalogFactory factory = FunctionsCatalogFactory.getInstance();
             Linkable linkable =
                     (Linkable) node.getProtocol(FastConfig.getLinkable(pid));
-            prot.setValue(factory.createCatalog(capacity, entropy));
+            prot.setValue(factory.createCatalog(node, capacity, entropy, pid));
         }
         return false;
     }

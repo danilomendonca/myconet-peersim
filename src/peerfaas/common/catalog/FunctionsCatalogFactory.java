@@ -1,6 +1,7 @@
 package peerfaas.common.catalog;
 
 import peerfaas.common.random.RandomDemand;
+import peersim.core.Node;
 
 public class FunctionsCatalogFactory {
 
@@ -18,7 +19,7 @@ public class FunctionsCatalogFactory {
     private final RandomDemand randomDemand = new RandomDemand();
 
     //TODO
-    public FunctionsCatalog createCatalog(int capacity, int entropy){
+    public FunctionsCatalog createCatalog(Node node, int capacity, int entropy, int pid){
         FunctionsCatalog fc = new FunctionsCatalogImpl();
         fc.setCapacity(capacity);
         double maxUtility = 0;
@@ -27,7 +28,7 @@ public class FunctionsCatalogFactory {
             maxUtility = assignUtility(fc, functionName, 1);
         }
         fc.normalizeUtilities(maxUtility);
-        fc.updateShares(capacity);
+        fc.updateShares(node, capacity, pid);
         fc.printCatalog();
         return fc;
     }
@@ -36,7 +37,7 @@ public class FunctionsCatalogFactory {
         double initialDemand = randomDemand.initialDemand(baseDemand);
         double maxUtility = 0;
         fc.updateDemand(functionName, initialDemand);
-        double utility = initialDemand;
+        double utility = initialDemand; //AllocationSolver.getIdealShareForDemand(initialDemand);
         if(utility > maxUtility) {
             maxUtility = utility;
         }

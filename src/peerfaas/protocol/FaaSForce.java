@@ -18,6 +18,7 @@
 
 package peerfaas.protocol;
 
+import peerfaas.common.AllocationSolver;
 import peerfaas.common.catalog.FunctionsCatalog;
 import peersim.cdsim.CDProtocol;
 import peersim.config.FastConfig;
@@ -63,11 +64,11 @@ public class FaaSForce extends FunctionsCatalogHolder
     }
 
     private void sendUpdatedCatalog(Node node, int pid) {
-        Linkable linkable =
-                (Linkable) node.getProtocol(FastConfig.getLinkable(pid));
         boolean updatedOurCatalog = checkOurCatalog(node, pid, getValue().getUtilities().keySet());
         if(updatedOurCatalog) {
             getValue().printCatalog();
+            Linkable linkable =
+                    (Linkable) node.getProtocol(FastConfig.getLinkable(pid));
             for(int i = 0; i < linkable.degree(); i++){
                 Node peer = linkable.getNeighbor(i);
                 // XXX quick and dirty handling of failures
@@ -144,14 +145,15 @@ public class FaaSForce extends FunctionsCatalogHolder
         getValue().normalizeUtilities(maxUtility);
         Collection<Double> newUtilities = new ArrayList<>(getValue().getUtilities().values());
         if(!newUtilities.equals(actualUtilities)) {
-            getValue().updateShares(capacity);
+            getValue().updateShares(node, capacity, pid);
             return true;
         }else
             return false;
     }
 
     private double getUpdatedUtility(Node node, String functionName, int pid){
-        double baseUtility = getValue().getAverageDemand(functionName);
+        double demand = getValue().getAverageDemand(functionName);
+        double baseUtility = demand; //AllocationSolver.getIdealShareForDemand(demand);
         getValue().resetDemand(functionName);
         double neighborsContribution = getNeighborsContribution(node, functionName, pid);
         double newUtility = baseUtility - neighborsContribution;
@@ -168,8 +170,13 @@ public class FaaSForce extends FunctionsCatalogHolder
             double maxLatency = 100; //TODO
             double latencyAttenuation = 1 / Math.exp(latency/maxLatency);
             FaaSForce neighborForce = (FaaSForce) neighbor.getProtocol(pid);
-            long share = neighborForce.getValue().getShares().getOrDefault(functionName, 0l);
-            neighborsContribution += (share) * latencyAttenuation;
+            double demand = neighborForce.getValue().getAverageDemand(functionName);
+            double idealShare = AllocationSolver.getIdealShareForDemand(demand);
+            long actualShare = neighborForce.getValue().getShares().getOrDefault(functionName, 0l);
+            if(actualShare > 0)
+                neighborsContribution += actualShare * latencyAttenuation;
+            else
+                neighborsContribution -= demand * latencyAttenuation;
         }
         return neighborsContribution;
     }
