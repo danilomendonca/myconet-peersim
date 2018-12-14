@@ -107,8 +107,8 @@ public class DemandVariation implements Control {
                     .getProtocol(pid);
             for(String functionName : protocol.getValue().getDemands().keySet()) {
                 double actualDemand = protocol.getValue().getDemands().get(functionName);
-                double nextDemand = actualDemand + (CommonState.r.nextDouble() - 0.5) * 2;
-                protocol.getValue().getDemands().put(functionName, nextDemand);
+                double nextDemand = Math.max(0, actualDemand);// + (CommonState.r.nextDouble() - 0.5) * 2);
+                protocol.getValue().updateDemand(functionName, nextDemand);
             }
         }
         return false;

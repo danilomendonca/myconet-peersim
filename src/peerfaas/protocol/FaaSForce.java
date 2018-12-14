@@ -65,16 +65,16 @@ public class FaaSForce extends FunctionsCatalogHolder
     private void sendUpdatedCatalog(Node node, int pid) {
         Linkable linkable =
                 (Linkable) node.getProtocol(FastConfig.getLinkable(pid));
-        for(int i = 0; i < linkable.degree(); i++){
-            Node peer = linkable.getNeighbor(i);
-            // XXX quick and dirty handling of failures
-            // (message would be lost anyway, we save time)
-            if (!peer.isUp()) return;
+        boolean updatedOurCatalog = checkOurCatalog(node, pid, getValue().getUtilities().keySet());
+        if(updatedOurCatalog) {
+            getValue().printCatalog();
+            for(int i = 0; i < linkable.degree(); i++){
+                Node peer = linkable.getNeighbor(i);
+                // XXX quick and dirty handling of failures
+                // (message would be lost anyway, we save time)
+                if (!peer.isUp()) return;
 
-            boolean updatedOurCatalog = checkOurCatalog(node, pid, getValue().getUtilities().keySet());
-            if(updatedOurCatalog) {
                 System.out.println("Sending updated catalog from Node " + node.getIndex() + " to Node " + peer.getIndex());
-                getValue().printCatalog();
                 ((Transport) node.getProtocol(FastConfig.getTransport(pid))).
                         send(
                                 node,
@@ -84,7 +84,6 @@ public class FaaSForce extends FunctionsCatalogHolder
             }
         }
     }
-
 
     private void sendUpdatedCatalogToRandom(Node node, int pid) {
         Linkable linkable =
@@ -134,6 +133,7 @@ public class FaaSForce extends FunctionsCatalogHolder
 
     private boolean checkOurCatalog(Node node, int pid, Set<String> functions) {
         double maxUtility = 0;
+        int capacity = getValue().getCapacity();
         Collection<Double> actualUtilities = new ArrayList<>(getValue().getUtilities().values());
         for(String fName : functions) {
             double updatedUtility = getUpdatedUtility(node, fName, pid);
@@ -144,14 +144,15 @@ public class FaaSForce extends FunctionsCatalogHolder
         getValue().normalizeUtilities(maxUtility);
         Collection<Double> newUtilities = new ArrayList<>(getValue().getUtilities().values());
         if(!newUtilities.equals(actualUtilities)) {
-            getValue().updateShares();
+            getValue().updateShares(capacity);
             return true;
         }else
             return false;
     }
 
     private double getUpdatedUtility(Node node, String functionName, int pid){
-        double baseUtility = getValue().getDemands().get(functionName);
+        double baseUtility = getValue().getAverageDemand(functionName);
+        getValue().resetDemand(functionName);
         double neighborsContribution = getNeighborsContribution(node, functionName, pid);
         double newUtility = baseUtility - neighborsContribution;
         return newUtility;
@@ -164,11 +165,11 @@ public class FaaSForce extends FunctionsCatalogHolder
         for(int i = 0; i < linkable.degree(); i++) {
             Node neighbor = linkable.getNeighbor(i);
             FaaSForce neighborForce = (FaaSForce) neighbor.getProtocol(pid);
-            double latency = 10;//CommonState.r.nextDouble() * 100; //TODO
+            double latency = 10; //CommonState.r.nextDouble() * 100; //TODO
             double maxLatency = 100; //TODO
             double latencyAttenuation = 1 / Math.exp(latency/maxLatency);
-            long theirShare = neighborForce.getValue().getShares().getOrDefault(functionName, 0l);
-            neighborsContribution += theirShare * latencyAttenuation;
+            long share = neighborForce.getValue().getShares().getOrDefault(functionName, 0l);
+            neighborsContribution += (share) * latencyAttenuation;
         }
         return neighborsContribution;
     }

@@ -1,5 +1,14 @@
 # network size
-SIZE 3
+SIZE 2
+
+# connectivity
+CONNECTIVITY SIZE - 1
+
+# number of distinct functions in the system
+ENTROPY 10
+
+# the capacity available to each node
+CAPACITY 10
 
 # parameters of periodic execution
 CYCLES 100
@@ -38,7 +47,7 @@ protocol.tr.drop DROP
 ################### initialization ======================
 
 init.rndlink WireKOut
-init.rndlink.k 20
+init.rndlink.k CONNECTIVITY
 init.rndlink.protocol link
 
 #init.vals LinearDistribution
@@ -52,6 +61,8 @@ init.sch.randstart
 
 init.fc peerfaas.control.FunctionsCatalogInitializer
 init.fc.protocol ff
+init.fc.entropy ENTROPY
+init.fc.capacity CAPACITY
 
 ################ control ==============================
 
@@ -61,4 +72,4 @@ init.fc.protocol ff
 
 control.dv peerfaas.control.DemandVariation
 control.dv.protocol ff
-control.dv.step CYCLE * 10
+control.dv.step CYCLE / 10

@@ -17,14 +17,14 @@ public class FunctionsCatalogFactory {
     }
 
     //TODO
-    public FunctionsCatalog createCatalog(){
+    public FunctionsCatalog createCatalog(int capacity, int entropy){
         FunctionsCatalog fc = new FunctionsCatalogImpl();
-        int entropy = 10;
+        fc.setCapacity(capacity);
         double maxUtility = 0;
         for(int i = 0; i < entropy; i++){//TODO
             String functionName = "function" + i;
-            double demand = CommonState.r.nextDouble() * 5; //TODO
-            fc.getDemands().put(functionName, demand);
+            double demand = CommonState.r.nextDouble() * 2; //TODO
+            fc.updateDemand(functionName, demand);
             double utility = demand;
             if(utility > maxUtility) {
                 maxUtility = utility;
@@ -32,7 +32,7 @@ public class FunctionsCatalogFactory {
             fc.getUtilities().put(functionName, utility);
         }
         fc.normalizeUtilities(maxUtility);
-        fc.updateShares();
+        fc.updateShares(capacity);
         fc.printCatalog();
         return fc;
     }

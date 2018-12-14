@@ -26,36 +26,48 @@ import java.util.Map;
 */
 public interface FunctionsCatalog {
 
-    public Map<String, Double> getDemands();
+    Map<String, Double> getDemands();
 
-    public void setDemands(Map<String,Double> value);
+    void setDemands(Map<String,Double> value);
 
-    /**
-    * Returns the value of the parameter hold by the implementor
-    * of this interface.
-    */
-    public Map<String, Double> getUtilities();
+    void updateDemand(String functionName, Double value);
 
-    /**
-    * Modifies the value of the parameter hold by the implementor
-    * of this interface.
-    */
-    public void setUtilities(Map<String, Double> value);
+    Double getAverageDemand(String functionName);
+
+    void resetDemand(String functionName);
 
     /**
     * Returns the value of the parameter hold by the implementor
     * of this interface.
     */
-    public Map<String, Long> getShares();
+    Map<String, Double> getUtilities();
 
     /**
     * Modifies the value of the parameter hold by the implementor
     * of this interface.
     */
-    public void setShares(Map<String, Long> value);
+    void setUtilities(Map<String, Double> value);
 
-    void updateShares();
     void normalizeUtilities(double maxUtility);
+
+    /**
+    * Returns the value of the parameter hold by the implementor
+    * of this interface.
+    */
+    Map<String, Long> getShares();
+
+    void updateShares(int capacity);
+
+    /**
+    * Modifies the value of the parameter hold by the implementor
+    * of this interface.
+    */
+    void setShares(Map<String, Long> value);
+
+    int getCapacity();
+
+    void setCapacity(int capacity);
+
     void printCatalog();
 }
 

@@ -50,12 +50,32 @@ public class FunctionsCatalogInitializer implements Control {
      */
     private static final String PAR_PROT = "protocol";
 
+    /**
+     * The number of distinct functions in the system.
+     *
+     * @config
+     */
+    private static final String PAR_ENTROPY = "entropy";
+
+    /**
+     * The capacity available to this catalog.
+     *
+     * @config
+     */
+    private static final String PAR_CAPACITY = "capacity";
+
     // ------------------------------------------------------------------------
     // Fields
     // ------------------------------------------------------------------------
 
     /** Protocol identifier; obtained from config property {@link #PAR_PROT}. */
     private final int pid;
+
+    /** Protocol identifier; obtained from config property {@link #PAR_ENTROPY}. */
+    private final int entropy;
+
+    /** Protocol identifier; obtained from config property {@link #PAR_CAPACITY}. */
+    private final int capacity;
 
     // ------------------------------------------------------------------------
     // Constructor
@@ -65,7 +85,10 @@ public class FunctionsCatalogInitializer implements Control {
      * Creates a new instance and read parameters from the config file.
      */
     public FunctionsCatalogInitializer(String prefix) {
+
         pid = Configuration.getPid(prefix + "." + PAR_PROT);
+        entropy = Configuration.getInt(prefix + "." + PAR_ENTROPY);
+        capacity = Configuration.getInt(prefix + "." + PAR_CAPACITY);
     }
 
     // ------------------------------------------------------------------------
@@ -83,7 +106,7 @@ public class FunctionsCatalogInitializer implements Control {
             FunctionsCatalogFactory factory = FunctionsCatalogFactory.getInstance();
             Linkable linkable =
                     (Linkable) node.getProtocol(FastConfig.getLinkable(pid));
-            prot.setValue(factory.createCatalog());
+            prot.setValue(factory.createCatalog(capacity, entropy));
         }
         return false;
     }

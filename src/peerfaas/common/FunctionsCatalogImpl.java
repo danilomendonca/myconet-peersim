@@ -1,17 +1,22 @@
 package peerfaas.common;
 
+import peersim.util.IncrementalStats;
+
 import java.util.*;
 
 public class FunctionsCatalogImpl implements FunctionsCatalog{
 
-    Map<String,Double> utilities;
     Map<String,Double> demands;
+    Map<String,IncrementalStats> demandStats;
+    Map<String,Double> utilities;
     Map<String,Long> shares;
+    int capcity;
 
     public FunctionsCatalogImpl(){
         demands = new HashMap<>();
         utilities = new HashMap<>();
         shares = new HashMap<>();
+        demandStats = new HashMap<>();
     }
 
     @Override
@@ -23,6 +28,39 @@ public class FunctionsCatalogImpl implements FunctionsCatalog{
     public void setDemands(Map<String, Double> value) {
         this.demands = value;
     }
+
+    @Override
+    public void updateDemand(String functionName, Double value) {
+        if(!demandStats.containsKey(functionName))
+            demandStats.put(functionName, new IncrementalStats());
+        demands.put(functionName, value);
+        demandStats.get(functionName).add(value);
+    }
+
+    @Override
+    public Double getAverageDemand(String functionName) {
+        if(demandStats.containsKey(functionName))
+            return demandStats.get(functionName).getAverage();
+        else
+            throw new RuntimeException("Average for function " + functionName + " does not exist");
+    }
+
+    @Override
+    public void resetDemand(String functionName) {
+        demandStats.get(functionName).reset();
+        demandStats.get(functionName).add(demands.get(functionName));
+    }
+
+    @Override
+    public int getCapacity() {
+        return capcity;
+    }
+
+    @Override
+    public void setCapacity(int capacity) {
+        this.capcity = capcity;
+    }
+
 
     @Override
     public Map<String, Double> getUtilities() {
@@ -54,15 +92,15 @@ public class FunctionsCatalogImpl implements FunctionsCatalog{
         setUtilities(sortByValue(getUtilities()));
     }
 
-    public void updateShares(){
-        long capacity = 6; //TODO
+    public void updateShares(int capcity){
+        long capacity = 10; //TODO
         long availableCapacity = capacity;
         for (String fName : getUtilities().keySet()) {
-            double utility = getUtilities().get(fName);
-            long nextShare = 1;//AllocationSolver.getNextShareForFunction(utility, capacity);
-            long actualShare = Math.min(nextShare, availableCapacity);
-            getShares().put(fName, actualShare);
-            availableCapacity -=  actualShare;
+            double demand = getAverageDemand(fName);
+            long idealShare = AllocationSolver.getNextShareForDemand(demand);
+            long givenShare = Math.min(availableCapacity, idealShare);
+            availableCapacity -=  givenShare;
+            getShares().put(fName, givenShare);
         }
     }
 
