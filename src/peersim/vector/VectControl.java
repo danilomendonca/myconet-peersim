@@ -51,7 +51,7 @@ protected static final String PAR_METHOD = "setter";
 
 /**
  * The getter method used to obtain the protocol values. 
- * Defaults to <code>getValue</code>
+ * Defaults to <code>getCatalog</code>
  * (for backward compatibility with previous 
  * implementation of this class, that were based on the 
  * {@link SingleValue} interface).

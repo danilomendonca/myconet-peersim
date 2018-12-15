@@ -101,10 +101,10 @@ public class DemandVariation implements Control {
 
             FaaSForce protocol = (FaaSForce) Network.get(i)
                     .getProtocol(pid);
-            for(String functionName : protocol.getValue().getDemands().keySet()) {
-                double actualDemand = protocol.getValue().getDemands().get(functionName);
+            for(String functionName : protocol.getCatalog().getDemands().keySet()) {
+                double actualDemand = protocol.getCatalog().getDemands().get(functionName);
                 double nextDemand = getNextDemand(actualDemand);
-                protocol.getValue().updateDemand(functionName, nextDemand);
+                protocol.getCatalog().updateDemand(functionName, nextDemand);
             }
         }
         return false;

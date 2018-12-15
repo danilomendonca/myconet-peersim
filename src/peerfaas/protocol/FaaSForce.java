@@ -64,9 +64,9 @@ public class FaaSForce extends FunctionsCatalogHolder
     }
 
     private void sendUpdatedCatalog(Node node, int pid) {
-        boolean updatedOurCatalog = checkOurCatalog(node, pid, getValue().getUtilities().keySet());
+        boolean updatedOurCatalog = checkOurCatalog(node, pid, getCatalog().getUtilities().keySet());
         if(updatedOurCatalog) {
-            getValue().printCatalog();
+            getCatalog().printCatalog();
             Linkable linkable =
                     (Linkable) node.getProtocol(FastConfig.getLinkable(pid));
             for(int i = 0; i < linkable.degree(); i++){
@@ -80,7 +80,7 @@ public class FaaSForce extends FunctionsCatalogHolder
                         send(
                                 node,
                                 peer,
-                                new FunctionsCatalogMessage(getValue(), node),
+                                new FunctionsCatalogMessage(getCatalog(), node),
                                 pid);
             }
         }
@@ -97,15 +97,15 @@ public class FaaSForce extends FunctionsCatalogHolder
             // (message would be lost anyway, we save time)
             if (!peern.isUp()) return;
 
-            boolean updatedOurCatalog = checkOurCatalog(node, pid, getValue().getUtilities().keySet());
+            boolean updatedOurCatalog = checkOurCatalog(node, pid, getCatalog().getUtilities().keySet());
             if(updatedOurCatalog) {
                 System.out.println("Sending updated catalog from Node " + node.getIndex() + " to Node " + peern.getIndex());
-                getValue().printCatalog();
+                getCatalog().printCatalog();
                 ((Transport) node.getProtocol(FastConfig.getTransport(pid))).
                         send(
                                 node,
                                 peern,
-                                new FunctionsCatalogMessage(getValue(), node),
+                                new FunctionsCatalogMessage(getCatalog(), node),
                                 pid);
             }
         }
@@ -134,49 +134,78 @@ public class FaaSForce extends FunctionsCatalogHolder
 
     private boolean checkOurCatalog(Node node, int pid, Set<String> functions) {
         double maxUtility = 0;
-        int capacity = getValue().getCapacity();
-        Collection<Double> actualUtilities = new ArrayList<>(getValue().getUtilities().values());
+        int capacity = getCatalog().getCapacity();
+        Collection<Double> actualUtilities = new ArrayList<>(getCatalog().getUtilities().values());
         for(String fName : functions) {
+            updateExternalDemand(node, fName, pid);
             double updatedUtility = getUpdatedUtility(node, fName, pid);
             if(updatedUtility > maxUtility)
                 maxUtility = updatedUtility;
-            getValue().getUtilities().put(fName, updatedUtility);
+            getCatalog().getUtilities().put(fName, updatedUtility);
         }
-        getValue().normalizeUtilities(maxUtility);
-        Collection<Double> newUtilities = new ArrayList<>(getValue().getUtilities().values());
+        getCatalog().normalizeUtilities(maxUtility);
+        Collection<Double> newUtilities = new ArrayList<>(getCatalog().getUtilities().values());
         if(!newUtilities.equals(actualUtilities)) {
-            getValue().updateShares(node, capacity, pid);
+            getCatalog().updateShares(node, capacity, pid);
             return true;
         }else
             return false;
     }
 
     private double getUpdatedUtility(Node node, String functionName, int pid){
-        double demand = getValue().getAverageDemand(functionName);
-        double baseUtility = demand; //AllocationSolver.getIdealShareForDemand(demand);
-        getValue().resetDemand(functionName);
+        double internalDemand = getCatalog().getAverageDemand(functionName);
+        double baseUtility = internalDemand; //AllocationSolver.getIdealShareForDemand(demand);
         double neighborsContribution = getNeighborsContribution(node, functionName, pid);
-        double newUtility = baseUtility - neighborsContribution;
+        double newUtility = baseUtility + neighborsContribution;
+        getCatalog().resetDemand(functionName); //TODO NOT THE RIGHT PLACE
         return newUtility;
+    }
+
+    private void updateExternalDemand(Node node, String functionName, int pid) {
+        Linkable linkable =
+                (Linkable) node.getProtocol( FastConfig.getLinkable(pid) );
+        double externalDemand = 0;
+        for(int i = 0; i < linkable.degree(); i++) {
+            Node neighbor = linkable.getNeighbor(i);
+            FaaSForce neighborForce = (FaaSForce) neighbor.getProtocol(pid);
+            double demand = neighborForce.getCatalog().getAverageDemand(functionName);
+            externalDemand += demand;
+        }
+        getCatalog().getExternalDemand().put(functionName, externalDemand);
     }
 
     private double getNeighborsContribution(Node node, String functionName, int pid) {
         Linkable linkable =
                 (Linkable) node.getProtocol( FastConfig.getLinkable(pid) );
         double neighborsContribution = 0;
+        double myInternalDemand = getCatalog().getAverageDemand(functionName);
+        double myExternalDemand = getCatalog().getExternalDemand().get(functionName);
+        double myTotalDemand =  myInternalDemand + myExternalDemand;
+        double maxDemand = 0, maxInternalDemand = 0;
+        for(int i = 0; i < linkable.degree(); i++) {
+            Node neighbor = linkable.getNeighbor(i);
+            FaaSForce neighborForce = (FaaSForce) neighbor.getProtocol(pid);
+            double demand = neighborForce.getCatalog().getAverageDemand(functionName);
+            if(maxInternalDemand < demand)
+                maxInternalDemand = demand;
+            double externalDemand = neighborForce.getCatalog().getExternalDemand().getOrDefault(functionName, 0d);
+            if(maxDemand < demand + externalDemand)
+                maxDemand = demand + externalDemand;
+        }
         for(int i = 0; i < linkable.degree(); i++) {
             Node neighbor = linkable.getNeighbor(i);
             double latency = 10; //CommonState.r.nextDouble() * 100; //TODO
             double maxLatency = 100; //TODO
             double latencyAttenuation = 1 / Math.exp(latency/maxLatency);
             FaaSForce neighborForce = (FaaSForce) neighbor.getProtocol(pid);
-            double demand = neighborForce.getValue().getAverageDemand(functionName);
-            double idealShare = AllocationSolver.getIdealShareForDemand(demand);
-            long actualShare = neighborForce.getValue().getShares().getOrDefault(functionName, 0l);
-            if(actualShare > 0)
-                neighborsContribution += actualShare * latencyAttenuation;
+            double demand = neighborForce.getCatalog().getAverageDemand(functionName);
+            //double idealShare = AllocationSolver.getIdealShareForDemand(demand);
+            long actualShare = neighborForce.getCatalog().getShares().getOrDefault(functionName, 0l);
+            if(myTotalDemand < maxDemand ||
+                    myTotalDemand == maxDemand && myInternalDemand < maxInternalDemand)
+                neighborsContribution -= actualShare * latencyAttenuation;
             else
-                neighborsContribution -= demand * latencyAttenuation;
+                neighborsContribution += demand;
         }
         return neighborsContribution;
     }

@@ -39,6 +39,8 @@ public interface FunctionsCatalog {
 
     void resetDemand(String functionName);
 
+    Map<String, Double> getExternalDemand();
+
     /**
     * Returns the value of the parameter hold by the implementor
     * of this interface.

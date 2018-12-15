@@ -16,6 +16,7 @@ public class FunctionsCatalogImpl implements FunctionsCatalog{
     Map<String,Double> utilities;
     Map<String,Long> shares;
     Map<String, AbstractMap.SimpleEntry<Long, Double>> delegatedDemand;
+    Map<String, Double> externalDemand;
     int capacity;
 
     public FunctionsCatalogImpl(){
@@ -24,6 +25,7 @@ public class FunctionsCatalogImpl implements FunctionsCatalog{
         shares = new HashMap<>();
         demandStats = new HashMap<>();
         delegatedDemand = new HashMap<>();
+        externalDemand = new HashMap<>();
     }
 
     @Override
@@ -56,7 +58,11 @@ public class FunctionsCatalogImpl implements FunctionsCatalog{
     public void resetDemand(String functionName) {
         demandStats.get(functionName).reset();
         demandStats.get(functionName).add(demands.get(functionName));
-        delegatedDemand.clear();
+    }
+
+    @Override
+    public Map<String, Double> getExternalDemand() {
+        return externalDemand;
     }
 
     @Override
@@ -94,13 +100,19 @@ public class FunctionsCatalogImpl implements FunctionsCatalog{
     public void updateShares(Node node, int capcity, int pid){
         long capacity = capcity;
         long availableCapacity = capacity;
+        getShares().clear();
         for (String fName : getUtilities().keySet()) {
-            double demand = getAverageDemand(fName);
-            double externalDemand = getExternalDemand(node, fName, pid);
-            long idealShare = AllocationSolver.getIdealShareForDemand(demand + externalDemand);
-            long givenShare = Math.min(availableCapacity, idealShare);
-            availableCapacity -=  givenShare;
-            getShares().put(fName, givenShare);
+            if(availableCapacity > 0) {
+                double demand = getAverageDemand(fName);
+                double externalDemand = getExternalDemand(node, fName, pid);
+                long idealShare = AllocationSolver.getIdealShareForDemand(demand + externalDemand);
+                long givenShare = Math.min(availableCapacity, idealShare);
+                availableCapacity -= givenShare;
+                getShares().put(fName, givenShare);
+            }else{
+                resetNeighborsDelegatedDemandToThisNode(node, fName, pid);
+                getShares().put(fName, 0l);
+            }
         }
     }
 
@@ -114,28 +126,46 @@ public class FunctionsCatalogImpl implements FunctionsCatalog{
             // XXX quick and dirty handling of failures
             // (message would be lost anyway, we save time)
             FaaSForce neighborForce = (FaaSForce) neighbor.getProtocol(pid);
-            double neighborDemand = getNeighborDemand(neighborForce, functionName);
+            double neighborDemand = getNeighborDemandSurplus(neighborForce, functionName);
             if(neighborDemand > 0) {
                 externalDemand += neighborDemand;
                 //TODO 1) the actual demand handled by this node depends on the allocation; now assuming all of it;
                 //TODO 2) a message needs to be sent to the other node instead of updating its catalog directly
                 AbstractMap.SimpleEntry<Long, Double> delegatedDemand = new AbstractMap.SimpleEntry<>(node.getID(), externalDemand);
-                neighborForce.getValue().getDelegatedDemand().put(functionName, delegatedDemand);
+                neighborForce.getCatalog().getDelegatedDemand().put(functionName, delegatedDemand);
             }
         }
         return externalDemand;
     }
 
-    private double getNeighborDemand(FaaSForce neighborForce, String functionName) {
-        if(!neighborForce.getValue().getDelegatedDemand().containsKey(functionName)) {
-            double demand = neighborForce.getValue().getAverageDemand(functionName);
-            long actualShare = neighborForce.getValue().getShares().getOrDefault(functionName, 0l);
+    private double getNeighborDemandSurplus(FaaSForce neighborForce, String functionName) {
+        if(!neighborForce.getCatalog().getDelegatedDemand().containsKey(functionName)) {
+            double demand = neighborForce.getCatalog().getAverageDemand(functionName);
+            long actualShare = neighborForce.getCatalog().getShares().getOrDefault(functionName, 0l);
             if (actualShare == 0) {
                 return demand;
             }else
                 return 0;
         }else
             return 0;
+    }
+
+    private void resetNeighborsDelegatedDemandToThisNode(Node node, String functionName, int pid){
+        Linkable linkable =
+                (Linkable) node.getProtocol(FastConfig.getLinkable(pid));
+        for(int i = 0; i < linkable.degree(); i++) {
+            Node neighbor = linkable.getNeighbor(i);
+            if (!neighbor.isUp()) continue;
+            // XXX quick and dirty handling of failures
+            // (message would be lost anyway, we save time)
+            FaaSForce neighborForce = (FaaSForce) neighbor.getProtocol(pid);
+            //TODO a message needs to be sent to the other node instead of updating its catalog directly
+            if(neighborForce.getCatalog().getDelegatedDemand().containsKey(functionName)) {
+                AbstractMap.SimpleEntry entry = neighborForce.getCatalog().getDelegatedDemand().get(functionName);
+                if(entry.getKey().equals(node.getID()))
+                    neighborForce.getCatalog().getDelegatedDemand().remove(functionName);
+            }
+        }
     }
 
     @Override

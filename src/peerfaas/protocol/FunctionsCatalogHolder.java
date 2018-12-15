@@ -73,7 +73,7 @@ public Object clone()
 /**
  * @inheritDoc
  */
-public FunctionsCatalog getValue()
+public FunctionsCatalog getCatalog()
 {
 	return value;
 }

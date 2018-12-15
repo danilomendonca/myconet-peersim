@@ -28,7 +28,7 @@ import peersim.core.*;
  * <p>
  * The method to be used is specified at construction time.
  * For backward compatibility, if no method is specified, the method
- * <code>getValue</code> is used. In this way, protocols
+ * <code>getCatalog</code> is used. In this way, protocols
  * implementing the {@link SingleValue} interface can be manipulated using the
  * old configuration syntax (i.e., without specifying the method).
  * <p>
@@ -73,7 +73,7 @@ private Class type;
  * @param methodn the configuration parameter name that contains the getter
  * method name.
  * The parameter <code>prefix + "." + methodn</code> is read, with the default
- * value <code>getValue</code>.
+ * value <code>getCatalog</code>.
  */
 public Getter(String prefix, String protocol, String methodn) {
 
@@ -91,7 +91,7 @@ private void init() {
 
 	// Read configuration parameter
 	pid = Configuration.getPid(prefix + "." + protocol);
-	methodName = Configuration.getString(prefix+"."+methodn,"getValue");
+	methodName = Configuration.getString(prefix+"."+methodn,"getCatalog");
 	// Search the method
 	Class clazz = Network.prototype.getProtocol(pid).getClass();
 	try {

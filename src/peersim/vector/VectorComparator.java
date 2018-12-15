@@ -32,10 +32,10 @@ import peersim.core.*;
  * method are specified in the constructor.
  * <br>
  * This comparator can be used, for example, to sort
- * an array of nodes based on method <code>getValue</code>
+ * an array of nodes based on method <code>getCatalog</code>
  * associated to the protocol <code>pid</code>:
  * <PRE>
- * Comparator c = new VectorComparator(pid, "getValue");
+ * Comparator c = new VectorComparator(pid, "getCatalog");
  * Array.sort(Node[] array, c);
  * </PRE>
  * Note that differently from other classes in this package,
