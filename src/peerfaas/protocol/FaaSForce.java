@@ -181,31 +181,18 @@ public class FaaSForce extends FunctionsCatalogHolder
         double myInternalDemand = getCatalog().getAverageDemand(functionName);
         double myExternalDemand = getCatalog().getExternalDemand().get(functionName);
         double myTotalDemand =  myInternalDemand + myExternalDemand;
-        double maxDemand = 0, maxInternalDemand = 0;
         for(int i = 0; i < linkable.degree(); i++) {
             Node neighbor = linkable.getNeighbor(i);
             FaaSForce neighborForce = (FaaSForce) neighbor.getProtocol(pid);
-            double demand = neighborForce.getCatalog().getAverageDemand(functionName);
-            if(maxInternalDemand < demand)
-                maxInternalDemand = demand;
-            double externalDemand = neighborForce.getCatalog().getExternalDemand().getOrDefault(functionName, 0d);
-            if(maxDemand < demand + externalDemand)
-                maxDemand = demand + externalDemand;
-        }
-        for(int i = 0; i < linkable.degree(); i++) {
-            Node neighbor = linkable.getNeighbor(i);
             double latency = 10; //CommonState.r.nextDouble() * 100; //TODO
             double maxLatency = 100; //TODO
             double latencyAttenuation = 1 / Math.exp(latency/maxLatency);
-            FaaSForce neighborForce = (FaaSForce) neighbor.getProtocol(pid);
             double demand = neighborForce.getCatalog().getAverageDemand(functionName);
-            //double idealShare = AllocationSolver.getIdealShareForDemand(demand);
+            double externalDemand = neighborForce.getCatalog().getExternalDemand().getOrDefault(functionName, 0d);
             long actualShare = neighborForce.getCatalog().getShares().getOrDefault(functionName, 0l);
-            if(myTotalDemand < maxDemand ||
-                    myTotalDemand == maxDemand && myInternalDemand < maxInternalDemand)
+            if(myTotalDemand < demand + externalDemand ||
+                    myTotalDemand == demand + externalDemand && myInternalDemand < demand)
                 neighborsContribution -= actualShare * latencyAttenuation;
-            else
-                neighborsContribution += demand;
         }
         return neighborsContribution;
     }
