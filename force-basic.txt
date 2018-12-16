@@ -70,11 +70,35 @@ init.sch.randstart
 
 ################ control ==============================
 
-#control.0 SingleValueObserver
-#control.0.protocol ff
-#control.0.step CYCLE
-
 control.dv peerfaas.control.DemandVariation
 control.dv.protocol ff
 control.dv.step CYCLE / 10
 control.dv.delta DELTADEMAND
+
+
+####################################################################
+# Visualization
+#
+# GUI display during the run
+####################################################################
+
+control.jv peerfaas.control.JungVisualizer
+control.jv.junggraph_proto jg
+control.jv.show_edges true
+control.jv.label_nodes true
+control.jv.image_dir capture
+
+# Setting scale_shapes false gives small nodes
+# Setting scale_shapes true gives nodes with sizes log-scaled by capacity
+#   ...but probably need to use longer edge lengths to make
+#   this look decent.  Also, will need to be updated if used in
+#   scenarios where the bulwark state is enabled
+control.jv.scale_shapes false
+
+# Most of the scenario-specific visualization setup has been split out
+# into VisualizerTransformers.  Extend this class or a subclass and
+# override the appropriate methods to tweak the display.  Start by
+# using one of the four below appropriate to the scenario
+
+# (1) Basic Myconet...nodes colored by protocol state (doesn't handle bulwark)
+control.jv.transformers peerfaas.common.visualization.VisualizerTransformers
