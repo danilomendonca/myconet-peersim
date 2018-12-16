@@ -60,29 +60,49 @@ public class FaaSForce extends FunctionsCatalogHolder
      * {@link peersim.edsim.CDScheduler} component in the configuration.
      */
     public void nextCycle(Node node, int pid) {
-        sendUpdatedCatalog(node, pid);
+        boolean updatedOurCatalog = checkOurCatalog(node, pid, getCatalog().getUtilities().keySet());
+        if(updatedOurCatalog)
+            sendUpdatedCatalog(node, pid);
+    }
+
+    private boolean checkOurCatalog(Node node, int pid, Set<String> functions) {
+        double maxUtility = 0;
+        Collection<Double> actualUtilities = new ArrayList<>(getCatalog().getUtilities().values());
+        for(String fName : functions) {
+            updateExternalDemand(node, fName, pid);
+            double updatedUtility = getUpdatedUtility(node, fName, pid);
+            if(updatedUtility > maxUtility) {
+                maxUtility = updatedUtility;
+            }
+            getCatalog().getUtilities().put(fName, updatedUtility);
+        }
+        getCatalog().normalizeUtilities(maxUtility);
+        Collection<Double> newUtilities = new ArrayList<>(getCatalog().getUtilities().values());
+        if(!newUtilities.equals(actualUtilities)) {
+            int capacity = getCatalog().getCapacity();
+            getCatalog().updateShares(node, capacity, pid);
+            return true;
+        }else
+            return false;
     }
 
     private void sendUpdatedCatalog(Node node, int pid) {
-        boolean updatedOurCatalog = checkOurCatalog(node, pid, getCatalog().getUtilities().keySet());
-        if(updatedOurCatalog) {
-            getCatalog().printCatalog();
-            Linkable linkable =
-                    (Linkable) node.getProtocol(FastConfig.getLinkable(pid));
-            for(int i = 0; i < linkable.degree(); i++){
-                Node peer = linkable.getNeighbor(i);
-                // XXX quick and dirty handling of failures
-                // (message would be lost anyway, we save time)
-                if (!peer.isUp()) return;
+        getCatalog().printCatalog();
+        Linkable linkable =
+                (Linkable) node.getProtocol(FastConfig.getLinkable(pid));
+        for(int i = 0; i < linkable.degree(); i++){
+            Node peer = linkable.getNeighbor(i);
+            // XXX quick and dirty handling of failures
+            // (message would be lost anyway, we save time)
+            if (!peer.isUp()) return;
 
-                System.out.println("Sending updated catalog from Node " + node.getIndex() + " to Node " + peer.getIndex());
-                ((Transport) node.getProtocol(FastConfig.getTransport(pid))).
-                        send(
-                                node,
-                                peer,
-                                new FunctionsCatalogMessage(getCatalog(), node),
-                                pid);
-            }
+            System.out.println("Sending updated catalog from Node " + node.getIndex() + " to Node " + peer.getIndex());
+            ((Transport) node.getProtocol(FastConfig.getTransport(pid))).
+                    send(
+                            node,
+                            peer,
+                            new FunctionsCatalogMessage(getCatalog(), node),
+                            pid);
         }
     }
 
@@ -114,42 +134,30 @@ public class FaaSForce extends FunctionsCatalogHolder
 //--------------------------------------------------------------------------
 
     /**
+     * TODO
      * This is the standard method to define to process incoming messages.
      */
     public void processEvent(Node node, int pid, Object event) {
-        FunctionsCatalogMessage aem = (FunctionsCatalogMessage) event;
-        /*boolean updatedOurCatalog = processMessage(node, aem, pid);
+        /*FunctionsCatalogMessage aem = (FunctionsCatalogMessage) event;
+        boolean updatedOurCatalog = processMessage(node, aem, pid);
         if (updatedOurCatalog) {
             System.out.println("Catalog from Node " + node.getIndex() + " updated");
             //sendUpdatedCatalog(node, pid);
         }*/
     }
 
+    /**
+     * TODO
+     * @param node
+     * @param msg
+     * @param pid
+     * @return
+     */
     private boolean processMessage(Node node, FunctionsCatalogMessage msg, int pid) {
         //Node senderNode = msg.sender;
         FunctionsCatalog fc = msg.value;
         boolean updatedOurCatalog = checkOurCatalog(node, pid, fc.getShares().keySet());
         return updatedOurCatalog;
-    }
-
-    private boolean checkOurCatalog(Node node, int pid, Set<String> functions) {
-        double maxUtility = 0;
-        int capacity = getCatalog().getCapacity();
-        Collection<Double> actualUtilities = new ArrayList<>(getCatalog().getUtilities().values());
-        for(String fName : functions) {
-            updateExternalDemand(node, fName, pid);
-            double updatedUtility = getUpdatedUtility(node, fName, pid);
-            if(updatedUtility > maxUtility)
-                maxUtility = updatedUtility;
-            getCatalog().getUtilities().put(fName, updatedUtility);
-        }
-        getCatalog().normalizeUtilities(maxUtility);
-        Collection<Double> newUtilities = new ArrayList<>(getCatalog().getUtilities().values());
-        if(!newUtilities.equals(actualUtilities)) {
-            getCatalog().updateShares(node, capacity, pid);
-            return true;
-        }else
-            return false;
     }
 
     private double getUpdatedUtility(Node node, String functionName, int pid){
